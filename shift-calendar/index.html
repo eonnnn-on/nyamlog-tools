@@ -259,7 +259,7 @@
   }
   const shiftOf = d => SHIFTS[shiftIndex(d)];
 
-  const today = startOfDay(new Date());
+  let today = startOfDay(new Date());
   let view = new Date(today.getFullYear(), today.getMonth(), 1);
   let selected = new Date(today);
 
@@ -389,19 +389,18 @@
   $('memoBox').addEventListener('input', () => {
     const key = ymd(selected);
     const text = $('memoBox').value;
+    const had = !!readMemo(key);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       const ok = writeMemo(key, text);
-      if (ok){
-        $('savedTip').classList.add('on');
-        setTimeout(() => $('savedTip').classList.remove('on'), 1400);
-        // 메모 점 갱신
-        const selKey = ymd(selected);
-        if (selected.getMonth() === view.getMonth() && selected.getFullYear() === view.getFullYear()){
-          renderCalendar();
-        }
+      if (!ok) return;
+      $('savedTip').classList.add('on');
+      setTimeout(() => $('savedTip').classList.remove('on'), 1400);
+      // 메모 유무가 바뀐 경우에만 달력의 메모 점 갱신
+      if (had !== !!text && selected.getMonth() === view.getMonth() && selected.getFullYear() === view.getFullYear()){
+        renderCalendar();
       }
-    }, 260);
+    }, 300);
   });
 
   $('prevBtn').addEventListener('click', () => {
@@ -424,6 +423,18 @@
   renderCalendar();
   renderDetail();
 
+  // 근무 중 표시 갱신 + 자정 넘김 처리
+  setInterval(() => {
+    const nowDay = startOfDay(new Date());
+    if (ymd(nowDay) !== ymd(today)){
+      today = nowDay;
+      renderToday();
+      renderCounters();
+      renderCalendar();
+    } else {
+      renderToday();
+    }
+  }, 60000);
   // ── 오프라인 캐시
   if ('serviceWorker' in navigator){
     window.addEventListener('load', () => {

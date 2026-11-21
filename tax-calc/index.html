@@ -334,9 +334,12 @@
       } else if(shift > 0 && delta > 0){
         $('cShiftNote').className = 'note';
         $('cShiftNote').textContent = '체크카드로 ' + won(man(shift)) + '만 원 옮기면 소득공제 +' + won(man(delta)) + '만 원 → 절세 +' + won(taxValue(delta, rate)) + '원 더 받아요.';
+      } else if(shift > 0 && (credit + check) > a.threshold){
+        $('cShiftNote').className = 'note';
+        $('cShiftNote').textContent = '지금은 공제 문턱(' + won(man(a.threshold)) + '만 원)을 신용카드가 다 채우고 있어서, 신용→체크로 옮겨도 공제가 그대로예요. 문턱을 넘는 추가 지출부터 체크카드로 결제하면 그 금액의 30%가 공제됩니다.';
       } else {
         $('cShiftNote').className = 'note';
-        $('cShiftNote').textContent = '총급여의 25%를 넘게 써야 공제가 시작됩니다. 아직 문턱을 못 넘었다면 신용카드로 먼저 채우는 게 유리해요.';
+        $('cShiftNote').textContent = '아직 공제 문턱(' + won(man(a.threshold)) + '만 원)을 못 넘었어요. 이 구간은 신용카드로 채우고, 문턱을 넘는 지출부터 체크카드·현금영수증으로 결제하는 게 유리합니다.';
       }
       $('cRateChip').textContent = '내 한계세율 ' + pct;
       $('cLimitChip').textContent = '기본 한도 ' + won(man(a.limit)) + '만 원';
