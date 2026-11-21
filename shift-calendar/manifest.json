@@ -1,0 +1,17 @@
+{
+  "name": "4조 2교대 근무 달력",
+  "short_name": "교대달력",
+  "description": "주간·야간·비번·휴무 4일 순환 달력과 날짜별 메모",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f16",
+  "theme_color": "#141a23",
+  "lang": "ko",
+  "icons": [
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>냠로그 미니 도구</title>
+<meta name="description" content="연말정산 절세 계산기, 4조 2교대 근무 달력 — 설치 없이 쓰는 무료 웹 도구.">
+<meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0f16" media="(prefers-color-scheme: dark)">
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --ink:#101828; --ink2:#475467; --muted:#98a2b3;
+    --line:#e6e9ef; --accent:#1d4ed8; --accent-soft:#eef2ff;
+    --good:#0a7c5a; --good-soft:#e8f7f1;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -14px rgba(16,24,40,.2);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b0f16; --card:#141a23; --ink:#f2f4f7; --ink2:#c3cad6; --muted:#8b95a5;
+      --line:#232b37; --accent:#8fb0ff; --accent-soft:#1b2434; --good:#5ee0b0; --good-soft:#10261f;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -16px rgba(0,0,0,.7); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-size:16px; line-height:1.6;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+    padding:36px 16px calc(40px + env(safe-area-inset-bottom));}
+  .wrap{max-width:520px; margin:0 auto}
+  .eyebrow{display:inline-block; font-size:12px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:6px 11px; border-radius:999px}
+  h1{font-size:28px; letter-spacing:-.03em; margin:14px 0 6px; font-weight:800}
+  .lede{margin:0 0 22px; color:var(--ink2); font-size:14.5px}
+  a.tool{display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line);
+    border-radius:20px; padding:20px; margin-bottom:12px; box-shadow:var(--shadow); transition:transform .12s}
+  a.tool:active{transform:scale(.99)}
+  a.tool .tag{font-size:11.5px; font-weight:800; color:var(--good); background:var(--good-soft); padding:3px 8px; border-radius:999px; display:inline-block}
+  a.tool h2{font-size:17px; margin:10px 0 4px; letter-spacing:-.02em}
+  a.tool p{margin:0; font-size:13.5px; color:var(--ink2)}
+  a.tool .go{margin-top:12px; font-size:13.5px; font-weight:700; color:var(--accent)}
+  footer{margin-top:22px; text-align:center; font-size:12px; color:var(--muted)}
+  footer a{color:var(--ink2); text-decoration:none; border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">냠로그 도구</span>
+  <h1>설치 없이 쓰는 미니 도구</h1>
+  <p class="lede">브라우저에서 바로 열리고, 입력한 값은 어디로도 전송되지 않습니다.</p>
+
+  <a class="tool" href="./tax-calc/">
+    <span class="tag">2026년 귀속</span>
+    <h2>1인 가구 직장인 연말정산 절세 계산기</h2>
+    <p>카드 소득공제 · 고향사랑기부 10만 원 · 전세대출 이자 공제까지 30초 만에 계산</p>
+    <div class="go">계산하러 가기 →</div>
+  </a>
+
+  <a class="tool" href="./shift-calendar/">
+    <span class="tag">홈 화면 앱</span>
+    <h2>4조 2교대 근무 달력</h2>
+    <p>주간 → 야간 → 비번 → 휴무 순환 달력, 다음 휴무 카운터, 날짜별 메모</p>
+    <div class="go">달력 열기 →</div>
+  </a>
+
+  <footer>© 냠로그 · <a href="https://blog.naver.com/cccc_33" target="_blank" rel="noopener">blog.naver.com/cccc_33</a></footer>
+</div>
+</body>
+</html>

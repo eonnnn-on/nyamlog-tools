@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>4조 2교대 근무 달력</title>
+<meta name="description" content="4조 2교대 순환(주간·야간·비번·휴무)을 월간 달력으로 보고, 남은 휴무까지 세고, 날짜별 메모를 남기는 개인용 앱. 메모는 이 기기 브라우저에만 저장됩니다.">
+<meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0f16" media="(prefers-color-scheme: dark)">
+
+<!-- iOS 홈 화면 앱 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="교대달력">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.json">
+
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#101828; --ink2:#475467; --muted:#98a2b3;
+    --line:#e6e9ef; --line2:#eef1f5;
+    --day:#f59e0b; --day-soft:#fef3c7; --day-ink:#92400e;
+    --night:#7c6cf6; --night-soft:#eeecfe; --night-ink:#4c3dd6;
+    --off:#14b8a6; --off-soft:#d9f6f2; --off-ink:#0f766e;
+    --rest:#22c55e; --rest-soft:#dcfce7; --rest-ink:#15803d;
+    --accent:#2563eb; --accent-soft:#e8efff;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 26px -16px rgba(16,24,40,.3);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b0f16; --card:#141a23; --ink:#f2f4f7; --ink2:#c3cad6; --muted:#8b95a5;
+      --line:#242c39; --line2:#1c232e;
+      --day:#fbbf24; --day-soft:#2b2111; --day-ink:#fcd34d;
+      --night:#a493ff; --night-soft:#1e1b3a; --night-ink:#c4b8ff;
+      --off:#2dd4bf; --off-soft:#0d2b29; --off-ink:#5eead4;
+      --rest:#4ade80; --rest-soft:#10261a; --rest-ink:#86efac;
+      --accent:#8fb0ff; --accent-soft:#1b2434;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -18px rgba(0,0,0,.8);
+    }
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-size:16px;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+    padding:max(10px, env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom));
+    min-height:100dvh;
+  }
+  .app{max-width:480px; margin:0 auto}
+
+  /* 오늘 카드 */
+  .today-card{
+    background:var(--card); border:1px solid var(--line); border-radius:22px;
+    padding:16px 18px; box-shadow:var(--shadow); margin-bottom:12px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .today-card .date{font-size:12.5px; color:var(--muted); font-weight:600; letter-spacing:-.01em}
+  .today-card .shift{font-size:24px; font-weight:800; letter-spacing:-.03em; margin-top:2px; display:flex; align-items:center; gap:8px}
+  .today-card .hours{font-size:13px; color:var(--ink2); margin-top:2px; font-variant-numeric:tabular-nums}
+  .today-card .dt{flex:1; min-width:0}
+  .live{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800;
+    color:var(--rest-ink); background:var(--rest-soft); padding:4px 8px; border-radius:999px; vertical-align:middle;
+  }
+  .live i{width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .big-badge{
+    flex:0 0 auto; width:52px; height:52px; border-radius:16px; display:grid; place-items:center;
+    font-size:20px; font-weight:800; letter-spacing:-.02em;
+  }
+
+  /* 카운터 */
+  .stats{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px}
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:13px 14px; box-shadow:var(--shadow);
+  }
+  .stat .label{font-size:11.5px; font-weight:700; color:var(--muted); letter-spacing:-.01em}
+  .stat .value{font-size:22px; font-weight:800; letter-spacing:-.03em; margin-top:3px; font-variant-numeric:tabular-nums}
+  .stat .value small{font-size:12.5px; font-weight:700; margin-left:3px; color:var(--ink2)}
+  .stat .when{font-size:11.5px; color:var(--muted); margin-top:2px}
+
+  /* 달력 */
+  .cal{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:14px 12px 10px; box-shadow:var(--shadow)}
+  .cal-head{display:flex; align-items:center; justify-content:space-between; padding:0 4px 10px}
+  .cal-title{font-size:17px; font-weight:800; letter-spacing:-.03em}
+  .cal-title span{font-size:12px; font-weight:600; color:var(--muted); margin-left:6px}
+  .nav{display:flex; gap:4px; align-items:center}
+  .nav button{
+    font:inherit; border:1px solid var(--line); background:var(--bg); color:var(--ink2);
+    border-radius:11px; width:34px; height:34px; display:grid; place-items:center; cursor:pointer; font-size:15px; padding:0;
+  }
+  .nav button.today{width:auto; padding:0 11px; font-size:12.5px; font-weight:700}
+  .nav button:active{background:var(--accent-soft)}
+
+  .wd{display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:4px}
+  .wd div{text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:4px 0}
+  .wd div:first-child{color:#e05252}
+  .wd div:last-child{color:#4a7bd6}
+
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px}
+  .cell{
+    position:relative; border:0; background:transparent; font:inherit; color:inherit; cursor:pointer;
+    padding:5px 0 7px; border-radius:12px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    min-height:52px; justify-content:flex-start;
+  }
+  .cell.empty{pointer-events:none}
+  .cell .d{font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink2); line-height:1.3; width:26px; height:22px; display:grid; place-items:center; border-radius:8px}
+  .cell.sun .d{color:#e05252}
+  .cell.sat .d{color:#4a7bd6}
+  .cell.today .d{background:var(--ink); color:var(--bg); font-weight:800}
+  .cell.sel{background:var(--accent-soft); box-shadow:inset 0 0 0 1.5px var(--accent)}
+  .cell .b{font-size:10px; font-weight:800; padding:1px 6px; border-radius:999px; line-height:1.5}
+  .cell .memo-dot{position:absolute; bottom:2px; width:4px; height:4px; border-radius:50%; background:var(--accent)}
+  .cell:active{background:var(--line2)}
+
+  .b-day{background:var(--day-soft); color:var(--day-ink)}
+  .b-night{background:var(--night-soft); color:var(--night-ink)}
+  .b-off{background:var(--off-soft); color:var(--off-ink)}
+  .b-rest{background:var(--rest-soft); color:var(--rest-ink)}
+  .today-card .big-badge.b-day{background:var(--day-soft); color:var(--day-ink)}
+  .today-card .big-badge.b-night{background:var(--night-soft); color:var(--night-ink)}
+  .today-card .big-badge.b-off{background:var(--off-soft); color:var(--off-ink)}
+  .today-card .big-badge.b-rest{background:var(--rest-soft); color:var(--rest-ink)}
+
+  /* 월 요약 */
+  .summary{display:flex; gap:6px; padding:11px 4px 2px; margin-top:8px; border-top:1px solid var(--line2); flex-wrap:wrap; justify-content:center}
+  .summary span{font-size:11.5px; font-weight:700; color:var(--ink2); background:var(--bg); border-radius:999px; padding:4px 9px}
+  .summary b{font-weight:800}
+
+  /* 선택한 날 상세 */
+  .detail{margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:22px; padding:16px 18px; box-shadow:var(--shadow)}
+  .detail .top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+  .detail .h{font-size:15px; font-weight:800; letter-spacing:-.02em}
+  .detail .h small{display:block; font-size:12px; font-weight:600; color:var(--muted); margin-top:2px}
+  .detail .sname{font-size:19px; font-weight:800; letter-spacing:-.03em; margin-top:8px; display:flex; align-items:center; gap:7px}
+  .detail .stime{font-size:13px; color:var(--ink2); margin-top:2px; font-variant-numeric:tabular-nums}
+  .pill{font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:999px}
+
+  .memo{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line)}
+  .memo label{display:block; font-size:12px; font-weight:700; color:var(--ink2); margin-bottom:7px}
+  textarea{
+    width:100%; min-height:74px; resize:vertical; font:inherit; font-size:15px; line-height:1.55;
+    color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:13px; padding:11px 12px; outline:none;
+  }
+  textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  .memo-foot{display:flex; justify-content:space-between; align-items:center; margin-top:6px}
+  .memo-foot em{font-style:normal; font-size:11px; color:var(--muted)}
+  .saved{font-size:11.5px; font-weight:700; color:var(--rest-ink); opacity:0; transition:opacity .2s}
+  .saved.on{opacity:1}
+
+  details{margin-top:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:13px 16px; box-shadow:var(--shadow)}
+  summary{font-size:13px; font-weight:700; color:var(--ink2); cursor:pointer; list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"＋ "; color:var(--muted)}
+  details p{font-size:12.5px; color:var(--ink2); line-height:1.65; margin:10px 0 0}
+  details p b{color:var(--ink)}
+  footer{text-align:center; font-size:11px; color:var(--muted); margin-top:16px; line-height:1.8}
+
+  @media (prefers-reduced-motion: reduce){ .live i{animation:none} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="today-card" id="todayCard">
+    <div class="dt">
+      <div class="date" id="todayDate">–</div>
+      <div class="shift" id="todayShift">–</div>
+      <div class="hours" id="todayHours">–</div>
+    </div>
+    <div class="big-badge" id="todayBadge">–</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="label">다음 비번</div>
+      <div class="value" id="nextOff">–</div>
+      <div class="when" id="nextOffDate">–</div>
+    </div>
+    <div class="stat">
+      <div class="label">다음 휴무</div>
+      <div class="value" id="nextRest">–</div>
+      <div class="when" id="nextRestDate">–</div>
+    </div>
+  </div>
+
+  <section class="cal">
+    <div class="cal-head">
+      <div class="cal-title" id="calTitle">–</div>
+      <div class="nav">
+        <button type="button" id="prevBtn" aria-label="이전 달">‹</button>
+        <button type="button" class="today" id="todayBtn">오늘</button>
+        <button type="button" id="nextBtn" aria-label="다음 달">›</button>
+      </div>
+    </div>
+    <div class="wd"><div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div></div>
+    <div class="grid" id="grid"></div>
+    <div class="summary" id="summary"></div>
+  </section>
+
+  <section class="detail">
+    <div class="top">
+      <div>
+        <div class="h" id="selDate">–</div>
+        <div class="sname" id="selShift">–</div>
+        <div class="stime" id="selTime">–</div>
+      </div>
+    </div>
+    <div class="memo">
+      <label for="memoBox">메모</label>
+      <textarea id="memoBox" placeholder="이 날 할 일이나 인수인계 메모"></textarea>
+      <div class="memo-foot">
+        <em>이 기기 브라우저에만 저장됩니다</em>
+        <span class="saved" id="savedTip">저장됨 ✓</span>
+      </div>
+    </div>
+  </section>
+
+  <details>
+    <summary>홈 화면에 추가하는 방법</summary>
+    <p>
+      <b>아이폰 사파리</b>에서 이 페이지를 연 뒤 아래 공유 버튼(□↑) → <b>홈 화면에 추가</b>를 누르면
+      주소창 없이 앱처럼 열립니다. 한 번 열어두면 오프라인에서도 달력이 뜹니다.<br>
+      <b>안드로이드 크롬</b>은 오른쪽 위 ⋮ → <b>앱 설치 / 홈 화면에 추가</b>.
+    </p>
+  </details>
+
+  <footer>
+    주간 08:30~18:00 · 야간 17:30~익일 09:00 · 기준일 2026.11.08(주간)<br>
+    주간 → 야간 → 비번 → 휴무 4일 순환
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  // ── 기준: 2026-11-08 = 주간, 4일 순환
+  const BASE_UTC = Date.UTC(2026, 10, 8);
+  const SHIFTS = [
+    { key:'day',   name:'주간', short:'주', cls:'b-day',   time:'08:30 ~ 18:00',        desc:'아침 출근' },
+    { key:'night', name:'야간', short:'야', cls:'b-night', time:'17:30 ~ 익일 09:00',   desc:'밤 근무' },
+    { key:'off',   name:'비번', short:'비', cls:'b-off',   time:'종일 휴식',            desc:'야간 끝나고 쉬는 날' },
+    { key:'rest',  name:'휴무', short:'휴', cls:'b-rest',  time:'종일 휴무',            desc:'완전한 하루 off' }
+  ];
+  const WD = ['일','월','화','수','목','금','토'];
+  const STORE = 'shiftnote:v1:';
+
+  const $ = id => document.getElementById(id);
+  const pad2 = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+  function shiftIndex(d){
+    const diff = Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - BASE_UTC) / 86400000);
+    return ((diff % 4) + 4) % 4;
+  }
+  const shiftOf = d => SHIFTS[shiftIndex(d)];
+
+  const today = startOfDay(new Date());
+  let view = new Date(today.getFullYear(), today.getMonth(), 1);
+  let selected = new Date(today);
+
+  // ── 저장소
+  function readMemo(key){
+    try { return localStorage.getItem(STORE + key) || ''; } catch(e){ return ''; }
+  }
+  function writeMemo(key, text){
+    try {
+      if(text) localStorage.setItem(STORE + key, text);
+      else localStorage.removeItem(STORE + key);
+      return true;
+    } catch(e){ return false; }
+  }
+
+  // ── 오늘 카드
+  function renderToday(){
+    const s = shiftOf(today);
+    $('todayDate').textContent = (today.getMonth() + 1) + '월 ' + today.getDate() + '일 ' + WD[today.getDay()] + '요일';
+    const now = new Date();
+    const h = now.getHours() + now.getMinutes() / 60;
+    let working = false;
+    if (shiftIndex(today) === 0 && h >= 8.5 && h < 18) working = true;
+    if (shiftIndex(today) === 1 && h >= 17.5) working = true;
+    if (shiftIndex(addDays(today, -1)) === 1 && h < 9) working = true;
+
+    $('todayShift').innerHTML = s.name + (working ? ' <span class="live"><i></i>근무 중</span>' : '');
+    $('todayHours').textContent = s.time;
+    const badge = $('todayBadge');
+    badge.textContent = s.short;
+    badge.className = 'big-badge ' + s.cls;
+  }
+
+  // ── 카운터
+  function nextTarget(targetIdx){
+    for (let i = 0; i < 8; i++){
+      const d = addDays(today, i);
+      if (shiftIndex(d) === targetIdx) return { d, n: i };
+    }
+    return null;
+  }
+  function renderCounters(){
+    [['nextOff', 2, '비번'], ['nextRest', 3, '휴무']].forEach(([id, idx, label]) => {
+      const hit = nextTarget(idx);
+      if (!hit) return;
+      const el = $(id);
+      el.innerHTML = hit.n === 0 ? '오늘<small>' + label + '</small>' : 'D-' + hit.n;
+      $(id + 'Date').textContent = (hit.d.getMonth() + 1) + '/' + hit.d.getDate() + ' ' + WD[hit.d.getDay()] + '요일';
+    });
+  }
+
+  // ── 달력
+  function renderCalendar(){
+    $('calTitle').textContent = view.getFullYear() + '년 ' + (view.getMonth() + 1) + '월';
+    const first = new Date(view.getFullYear(), view.getMonth(), 1);
+    const lastDay = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+    const grid = $('grid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < first.getDay(); i++){
+      const blank = document.createElement('div');
+      blank.className = 'cell empty';
+      grid.appendChild(blank);
+    }
+
+    const counts = [0, 0, 0, 0];
+    const selKey = ymd(selected);
+    const todayKey = ymd(today);
+
+    for (let day = 1; day <= lastDay; day++){
+      const d = new Date(view.getFullYear(), view.getMonth(), day);
+      const idx = shiftIndex(d);
+      counts[idx]++;
+      const s = SHIFTS[idx];
+      const key = ymd(d);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell' + (d.getDay() === 0 ? ' sun' : '') + (d.getDay() === 6 ? ' sat' : '');
+      if (key === todayKey) btn.classList.add('today');
+      if (key === selKey) btn.classList.add('sel');
+      btn.setAttribute('aria-label', (d.getMonth() + 1) + '월 ' + day + '일 ' + s.name);
+
+      const num = document.createElement('span');
+      num.className = 'd';
+      num.textContent = day;
+      btn.appendChild(num);
+
+      const badge = document.createElement('span');
+      badge.className = 'b ' + s.cls;
+      badge.textContent = s.short;
+      btn.appendChild(badge);
+
+      if (readMemo(key)){
+        const dot = document.createElement('span');
+        dot.className = 'memo-dot';
+        btn.appendChild(dot);
+      }
+
+      btn.addEventListener('click', () => { selected = d; renderCalendar(); renderDetail(); });
+      grid.appendChild(btn);
+    }
+
+    const labels = ['주간', '야간', '비번', '휴무'];
+    const cls = ['b-day', 'b-night', 'b-off', 'b-rest'];
+    $('summary').innerHTML = labels.map((l, i) =>
+      '<span><b class="' + cls[i] + '" style="padding:1px 5px;border-radius:6px">' + l + '</b> ' + counts[i] + '일</span>'
+    ).join('');
+  }
+
+  // ── 선택일 상세 + 메모
+  let saveTimer = null;
+  function renderDetail(){
+    const s = shiftOf(selected);
+    const isToday = ymd(selected) === ymd(today);
+    $('selDate').innerHTML = (selected.getMonth() + 1) + '월 ' + selected.getDate() + '일 ' +
+      WD[selected.getDay()] + '요일' + (isToday ? '<small>오늘</small>' : '<small>' + s.desc + '</small>');
+    $('selShift').innerHTML = s.name + '<span class="pill ' + s.cls + '">' + s.short + '</span>';
+    $('selTime').textContent = s.time;
+
+    const key = ymd(selected);
+    const box = $('memoBox');
+    box.value = readMemo(key);
+    $('savedTip').classList.remove('on');
+  }
+
+  $('memoBox').addEventListener('input', () => {
+    const key = ymd(selected);
+    const text = $('memoBox').value;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const ok = writeMemo(key, text);
+      if (ok){
+        $('savedTip').classList.add('on');
+        setTimeout(() => $('savedTip').classList.remove('on'), 1400);
+        // 메모 점 갱신
+        const selKey = ymd(selected);
+        if (selected.getMonth() === view.getMonth() && selected.getFullYear() === view.getFullYear()){
+          renderCalendar();
+        }
+      }
+    }, 260);
+  });
+
+  $('prevBtn').addEventListener('click', () => {
+    view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  $('nextBtn').addEventListener('click', () => {
+    view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  $('todayBtn').addEventListener('click', () => {
+    selected = new Date(today);
+    view = new Date(today.getFullYear(), today.getMonth(), 1);
+    renderCalendar();
+    renderDetail();
+  });
+
+  renderToday();
+  renderCounters();
+  renderCalendar();
+  renderDetail();
+
+  // ── 오프라인 캐시
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
