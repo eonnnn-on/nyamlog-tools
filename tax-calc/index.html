@@ -241,7 +241,7 @@
     h1{font-size:34px}
     .lede{font-size:15px}
     .layout{display:grid; grid-template-columns:minmax(0,1fr) 420px; gap:22px; align-items:start; padding-bottom:32px}
-    .result-col{position:sticky; top:20px}
+    .result-col{position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto; scrollbar-width:thin; padding-right:2px}
     .stickybar{display:none}
     .card{padding:22px 22px 18px}
     .grid2{gap:13px}
@@ -864,10 +864,16 @@ var CALC = (function(){
         body: '실손·암·종신처럼 보장성 보험료를 내고 있으면 연 100만 원 한도로 12% 세액공제(최대 12만 원).'});
     }
 
-    // 추가납부 반전
+    // 추가납부 / 기납부 과소
     if(r.diff > 0){
-      tips.unshift({cat: 'refund', gain: 110000, title: '지금은 ' + won(r.diff*1.1) + ' 추가납부 예상',
-        body: '고향사랑기부 10만 원이면 세액공제 10만 원(지방세 포함 11만 원)이 붙어 환급으로 돌아섭니다. 12월 31일 전 결제가 기준입니다.'});
+      var owed = r.diff * 1.1;
+      if(owed <= 115000){
+        tips.unshift({cat: 'refund', gain: 110000, title: '지금은 ' + won(owed) + ' 추가납부 예상',
+          body: '고향사랑기부 10만 원이면 세액공제 10만 원(지방세 포함 11만 원)이 붙어 환급으로 돌아섭니다. 12월 31일 전 결제가 기준입니다.'});
+      } else {
+        tips.push({cat: 'refund', gain: 0, title: '추가납부 ' + won(owed) + ' 예상',
+          body: '기납부세액이 결정세액보다 적게 잡혀 있습니다. 원천징수영수증의 기납부세액과 회사 원천징수율(80·100·120% 선택)을 확인해 보세요. 실제로 더 낸 세금이 있으면 2월 정산에서 돌려받습니다.'});
+      }
     }
 
     tips.sort(function(a, b){
@@ -1005,14 +1011,21 @@ var CALC = (function(){
       : '도서·공연·체육 <b>30%</b>';
 
     var m2 = [];
-    m2.push('<div class="row"><span>신용카드 15%</span><b>' + man(c.parts.credit) + '</b></div>');
-    m2.push('<div class="row"><span>체크·현금 30%</span><b>' + man(c.parts.check) + '</b></div>');
-    if(c.market) m2.push('<div class="row"><span>전통시장 40%</span><b>' + man(c.parts.market) + '</b></div>');
-    if(c.transit) m2.push('<div class="row"><span>대중교통 40%</span><b>' + man(c.parts.transit) + '</b></div>');
-    if(c.culture) m2.push('<div class="row"><span>도서·공연·체육 30%</span><b>' + man(c.parts.culture) + '</b></div>');
-    if(c.total > c.threshold) m2.push('<div class="row"><span>− 문턱 ' + man(c.threshold) + ' 차감</span><b>−' + man(c.raw ? (c.parts.credit + c.parts.check + c.parts.market + c.parts.transit + c.parts.culture - c.raw) : 0) + '</b></div>');
-    m2.push('<div class="row key"><span>예상 소득공제</span><b>' + man(c.deduction) + '</b></div>');
-    m2.push('<div class="note">기본한도 ' + man(c.limit.base) + (c.extra ? ' + 추가한도 ' + man(c.extra) : '') + ' 적용</div>');
+    if(c.total > 0 && c.total < c.threshold){
+      m2.push('<div class="row"><span>올해 카드 사용액</span><b>' + man(c.total) + '</b></div>');
+      m2.push('<div class="row"><span>공제 문턱</span><b>' + man(c.threshold) + '</b></div>');
+      m2.push('<div class="row key"><span>예상 소득공제</span><b>0원</b></div>');
+      m2.push('<div class="note">문턱을 넘는 순간부터 초과분의 15~40%가 공제됩니다. 아직 ' + man(c.threshold - c.total) + ' 남았어요.</div>');
+    } else {
+      m2.push('<div class="row"><span>신용카드 15%</span><b>' + man(c.parts.credit) + '</b></div>');
+      m2.push('<div class="row"><span>체크·현금 30%</span><b>' + man(c.parts.check) + '</b></div>');
+      if(c.market) m2.push('<div class="row"><span>전통시장 40%</span><b>' + man(c.parts.market) + '</b></div>');
+      if(c.transit) m2.push('<div class="row"><span>대중교통 40%</span><b>' + man(c.parts.transit) + '</b></div>');
+      if(c.culture) m2.push('<div class="row"><span>도서·공연·체육 30%</span><b>' + man(c.parts.culture) + '</b></div>');
+      if(c.total > c.threshold) m2.push('<div class="row"><span>− 문턱 ' + man(c.threshold) + ' 차감</span><b>−' + man(c.raw ? (c.parts.credit + c.parts.check + c.parts.market + c.parts.transit + c.parts.culture - c.raw) : 0) + '</b></div>');
+      m2.push('<div class="row key"><span>예상 소득공제</span><b>' + man(c.deduction) + '</b></div>');
+      m2.push('<div class="note">기본한도 ' + man(c.limit.base) + (c.extra ? ' + 추가한도 ' + man(c.extra) : '') + ' 적용</div>');
+    }
     $('mini2').innerHTML = m2.join('');
 
     // Step 3
