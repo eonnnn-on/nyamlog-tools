@@ -405,12 +405,22 @@
 
   $('prevBtn').addEventListener('click', () => {
     view = new Date(view.getFullYear(), view.getMonth() - 1, 1);
+    syncSelection();
     renderCalendar();
   });
   $('nextBtn').addEventListener('click', () => {
     view = new Date(view.getFullYear(), view.getMonth() + 1, 1);
+    syncSelection();
     renderCalendar();
   });
+
+  // 달을 넘겼는데 선택한 날짜가 그 달에 없으면 1일을 선택한다
+  function syncSelection(){
+    if (selected.getFullYear() !== view.getFullYear() || selected.getMonth() !== view.getMonth()){
+      selected = new Date(view.getFullYear(), view.getMonth(), 1);
+      renderDetail();
+    }
+  }
   $('todayBtn').addEventListener('click', () => {
     selected = new Date(today);
     view = new Date(today.getFullYear(), today.getMonth(), 1);
