@@ -17,7 +17,7 @@
 var targets = [
   {sel: null, off: 0},
   {sel: '#resultCard', off: -8},
-  {sel: '.tips', off: -4}
+  {sel: '.tips', off: 0}
 ];
 var row = document.getElementById('row');
 targets.forEach(function(t){
@@ -32,7 +32,7 @@ targets.forEach(function(t){
       try{
         var doc = f.contentDocument, win = f.contentWindow, y = 0;
         var st = doc.createElement('style');
-        st.textContent = '::-webkit-scrollbar{width:0;height:0;display:none} html{scrollbar-width:none} body{padding-bottom:calc(78px + env(safe-area-inset-bottom)) !important}';
+        st.textContent = '::-webkit-scrollbar{width:0;height:0;display:none} html{scrollbar-width:none} body{padding-bottom:calc(480px + env(safe-area-inset-bottom)) !important}';
         doc.head.appendChild(st);
         if(t.sel){
           var el = doc.querySelector(t.sel);
