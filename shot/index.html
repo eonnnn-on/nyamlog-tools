@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모바일 미리보기 (임시)</title>
+<style>
+  html,body{margin:0;padding:0;background:#eef1f6}
+  .grid{display:grid;grid-template-columns:repeat(3,390px);gap:10px;width:1190px;padding:0}
+  .phone{width:390px;height:660px;overflow:hidden;background:#fff;border-radius:2px}
+  iframe{display:block;width:390px;height:660px;border:0}
+</style>
+</head>
+<body>
+<div class="grid" id="grid"></div>
+<script>
+var targets = [
+  {sel: null, off: 0},
+  {sel: '#sec2', off: -8},
+  {sel: '#sec3', off: -8},
+  {sel: '#sec4', off: -8},
+  {sel: '#resultCard', off: -8},
+  {sel: '.tips', off: -64}
+];
+var grid = document.getElementById('grid');
+targets.forEach(function(t){
+  var box = document.createElement('div');
+  box.className = 'phone';
+  var f = document.createElement('iframe');
+  f.src = '../tax-calc/';
+  box.appendChild(f);
+  grid.appendChild(box);
+  f.addEventListener('load', function(){
+    setTimeout(function(){
+      try{
+        var doc = f.contentDocument, win = f.contentWindow;
+        var y = 0;
+        if(t.sel){
+          var el = doc.querySelector(t.sel);
+          if(el) y = el.getBoundingClientRect().top + win.pageYOffset + t.off;
+        }
+        win.scrollTo(0, Math.max(0, y));
+      }catch(e){}
+    }, 250);
+  });
+});
+</script>
+</body>
+</html>

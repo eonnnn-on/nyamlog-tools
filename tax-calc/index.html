@@ -170,6 +170,7 @@
   .calc .v.pos{color:var(--good)}
 
   .credits{padding:2px 18px 6px; display:grid; gap:4px}
+  .credits:empty{display:none}
   .credits .row{display:flex; justify-content:space-between; gap:10px; font-size:12px; color:var(--ink2)}
   .credits .row b{font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
   .cap{font-size:11px; color:var(--muted); margin:4px 18px 0; line-height:1.5}
@@ -980,9 +981,10 @@ var CALC = (function(){
     // Step 2
     var c = r.card;
     setChip($('chip2'), c.deduction ? '공제 ' + man(c.deduction) : '공제 0원', !c.deduction);
-    var pct = c.threshold ? Math.min(100, (c.total / c.threshold) * 100) : 0;
+    var pctReal = c.threshold ? (c.total / c.threshold) * 100 : 0;
+    var pct = c.threshold ? Math.min(100, pctReal) : 0;
     $('progTxt').textContent = c.threshold
-      ? man(c.total) + ' / ' + man(c.threshold) + ' (' + Math.round(pct) + '%)'
+      ? man(c.total) + ' / ' + man(c.threshold) + ' (' + Math.round(pctReal) + '%)'
       : '총급여를 입력하세요';
     $('progFill').style.width = Math.min(100, pct) + '%';
     $('progFill').className = 'prog-fill' + (pct >= 100 ? ' done' : '');
@@ -1021,7 +1023,7 @@ var CALC = (function(){
       m3.push('<div class="note">무주택 세대주가 아니면 주택자금 공제를 받을 수 없습니다.</div>');
     } else {
       m3.push('<div class="row"><span>전세대출 원리금 ' + man(inp.jeonse) + ' × 40%</span><b>' + man(h.jeonse) + '</b></div>');
-      m3.push('<div class="row"><span>청약 납입 ' + man(h.cheongyakIn) + ' × 40%</span><b>' + man(h.cheongyak) + '</b></div>');
+      if(h.cheongyakIn) m3.push('<div class="row"><span>청약 납입 ' + man(h.cheongyakIn) + ' × 40%</span><b>' + man(h.cheongyak) + '</b></div>');
       if(!h.cyEligible && inp.cheongyak) m3.push('<div class="note">총급여 7,000만 원 초과는 청약 공제 대상이 아닙니다.</div>');
       if(h.capped) m3.push('<div class="row"><span>합산 한도</span><b>400만원</b></div>');
       m3.push('<div class="row key"><span>예상 소득공제</span><b>' + man(h.total) + '</b></div>');
@@ -1035,6 +1037,7 @@ var CALC = (function(){
     if(r.rentCredit) m4.push('<div class="row"><span>월세 ' + Math.round(r.rentRate*100) + '%</span><b>' + won(r.rentCredit) + '</b></div>');
     if(r.hometown){
       m4.push('<div class="row"><span>고향사랑기부 세액공제</span><b>' + won(r.hometown) + '</b></div>');
+      m4.push('<div class="row"><span>└ 지방소득세까지</span><b>' + won(r.hometown*1.1) + '</b></div>');
       m4.push('<div class="row"><span>답례품 한도 (기부액 30%)</span><b>' + man(inp.donate * 0.3) + '</b></div>');
     }
     if(r.pensionCredit) m4.push('<div class="row"><span>연금저축·IRP ' + Math.round(r.pensionRate*100) + '%</span><b>' + won(r.pensionCredit) + '</b></div>');
@@ -1083,7 +1086,7 @@ var CALC = (function(){
     function line(o){
       var cls = 'line' + (o.indent ? ' indent' : '') + (o.total ? ' total' : '') + (o.final ? ' final' : '');
       var v = o.v;
-      var txt = (v < 0 ? '−' : '') + won(Math.abs(v)) + '원';
+      var txt = (o.plus ? '+' : (v < 0 ? '−' : '')) + won(Math.abs(v)) + '원';
       var bar = '';
       if(o.barw !== undefined && o.barw > 0){
         bar = '<div class="b ' + (o.warm ? 'warm' : (o.soft ? 'soft' : '')) + '"><i style="width:' +
@@ -1100,7 +1103,7 @@ var CALC = (function(){
       rows1 += line({k: '신용카드 등', v: -r.card.deduction, indent: 1, soft: 1, barw: r.card.deduction/maxG});
       rows1 += line({k: '주거·청약', v: -r.housing.total, indent: 1, soft: 1, barw: r.housing.total/maxG});
       if(r.overLimit > 0) rows1 += line({k: '소득공제 종합한도 초과', v: r.overLimit, indent: 1, soft: 1, barw: r.overLimit/maxG});
-      rows1 += line({k: '과세표준', v: r.taxable, total: 1, warm: 1, barw: r.taxable/maxG, em: Math.round((r.taxable/maxG)*100) + '%'});
+      rows1 += line({k: '과세표준', v: r.taxable, total: 1, warm: 1, barw: r.taxable/maxG, em: '총급여의 ' + Math.round((r.taxable/maxG)*100) + '%'});
     } else {
       rows1 += '<div class="line"><span class="k">총급여를 입력하면 계산이 시작됩니다.</span><span class="v">—</span></div>';
     }
@@ -1117,23 +1120,17 @@ var CALC = (function(){
       if(r.rentCredit) rows2 += line({k: '월세액 세액공제', v: -r.rentCredit, indent: 1, soft: 1, barw: r.rentCredit/maxT});
       if(r.hometown) rows2 += line({k: '고향사랑기부 세액공제', v: -r.hometown, indent: 1, soft: 1, barw: r.hometown/maxT});
       if(r.standard) rows2 += line({k: '표준세액공제', v: -r.standard, indent: 1, soft: 1, barw: r.standard/maxT});
+      rows2 += line({k: '세액공제 합계', v: -r.creditApplied, total: 1, barw: r.creditApplied/maxT});
       rows2 += line({k: '결정세액', v: r.determined, total: 1, warm: 1, barw: r.determined/maxT});
       rows2 += line({k: '기납부세액 (소득세)', v: -r.paid, indent: 1, soft: 1, barw: Math.min(1, r.paid/maxT)});
-      rows2 += line({k: '소득세 차감징수', v: r.diff, indent: 1});
-      rows2 += line({k: '지방소득세 10%', v: r.local - r.paidLocal, indent: 1});
-      rows2 += line({k: diff < 0 ? '최종 환급액' : (diff > 0 ? '최종 추가납부액' : '최종 정산액'), v: diff, final: 1});
+      rows2 += line({k: '소득세 정산', v: r.diff, indent: 1, em: r.diff < 0 ? '환급' : (r.diff > 0 ? '추납' : '')});
+      rows2 += line({k: '지방소득세 정산', v: r.local - r.paidLocal, indent: 1, em: (r.local - r.paidLocal) < 0 ? '환급' : ((r.local - r.paidLocal) > 0 ? '추납' : '')});
+      rows2 += line({k: diff < 0 ? '최종 환급액' : (diff > 0 ? '최종 추가납부액' : '최종 정산액'), v: Math.abs(diff), plus: diff < 0 ? 1 : 0, final: 1});
     }
     $('rows2').innerHTML = rows2;
 
-    // credits list
-    var cl = '';
-    if(r.gross && r.creditSum > 0){
-      cl += '<div class="row"><span>세액공제 합계</span><b>' + won(r.creditApplied) + '</b></div>';
-      if(r.creditSum > r.tax) cl += '<div class="row"><span>산출세액 한도로 조정</span><b>' + won(r.creditSum - r.creditApplied) + ' 제외</b></div>';
-      cl += '<div class="row"><span>결정세액</span><b>' + won(r.determined) + '</b></div>';
-      cl += '<div class="row"><span>기납부세액</span><b>' + won(r.paid) + '</b></div>';
-    }
-    $('creditsList').innerHTML = cl;
+    // credits list (표 아래 요약은 표에 포함되어 비워 둠)
+    $('creditsList').innerHTML = '';
     $('capNote').textContent = r.gross
       ? '내 한계세율 ' + Math.round(r.rate*100) + '% · 근로소득세액공제 한도 ' + won(r.laborCap) +
         (r.laborCalc > r.laborCap ? ' (계산액 ' + won(r.laborCalc) + '에서 한도 적용)' : '')
